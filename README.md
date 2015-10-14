@@ -3,8 +3,7 @@ Uses Mana to Broadcast 7 popular SSID while turning Karma Off.
 
 # What this does?
 
-It broadcasts 7 SSID's at one time using the [CanaKit Ralink 5370 Chipset USB Wireless Card](http://www.amazon.com/dp/B00GFAN498/).  \n
-\n
+It broadcasts 7 SSID's at one time using the [CanaKit Ralink 5370 Chipset USB Wireless Card](http://www.amazon.com/dp/B00GFAN498/). 
 
 I have it configured to broadcast: 
 + linksys
