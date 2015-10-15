@@ -30,8 +30,6 @@ cp start-nat-simple-common.sh /?/run-mana/
 #Notes
 ./start-nat-simple-common.sh works with basic passs throuhg. 
 
-./start-nat-full-common.sh is a hot mess.  I have asked @singe for some help. 
-
-
+./start-nat-full-common.sh works by creating a eth0:1 virtual interface.
 
 These scripts assume that your wirless card that allows this many APs is WLAN1.  You may have to tweak it.  The TL-WN722N allows two SSID's if you want to edit it to use that. 
