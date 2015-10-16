@@ -19,6 +19,9 @@ I have it configured to broadcast:
 ![Demo Gif](https://raw.githubusercontent.com/jgamblin/mana-common/master/manacommon.gif)
 
 #Installation
+
+[Install and configure mana.](https://github.com/sensepost/mana)
+
 cp dhcp-common.conf /etc/mana-toolkit/
 
 cp hostapd-common.conf /etc/mana-toolkit/
@@ -29,7 +32,9 @@ cp start-nat-simple-common.sh /?/run-mana/
 
 
 #Running
-./start-nat-simple-common.sh  
+./start-nat-simple-full.sh
+
+./start-nat-simple-common.sh
 
 #Notes
 ./start-nat-simple-common.sh works with basic passs throuhg. 
