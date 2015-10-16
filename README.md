@@ -1,5 +1,5 @@
-# mana-common
-Uses Mana to Broadcast 7 popular SSID while turning Karma Off. 
+# Mana Common SSID's
+Uses Mana to Broadcast 7 popular SSID while turning Karma off to demonstrate the danager of having wireless networks saved on your phone.  
 
 # What this does?
 
