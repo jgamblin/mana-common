@@ -6,13 +6,17 @@ Uses Mana to Broadcast 7 popular SSID while turning Karma Off.
 It broadcasts 7 SSID's at one time using the [CanaKit Ralink 5370 Chipset USB Wireless Card](http://www.amazon.com/dp/B00GFAN498/). 
 
 I have it configured to broadcast: 
-+ linksys
++ attwifi
 + dlink
 + belkin54g
 + NETGEAR
-+ Google Starbucks
-+ attwifi
 + iPhone
++ linksys
++ xfinitywifi
+
+#Demo 
+
+![Demo Gif](https://raw.githubusercontent.com/jgamblin/mana-common/master/manacommon.gif)
 
 #Installation
 cp dhcp-common.conf /etc/mana-toolkit/
